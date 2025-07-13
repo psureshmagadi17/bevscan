@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     PRICE_CHANGE_THRESHOLD: float = 0.05  # 5%
     
     class Config:
-        env_file = "../.env"
+        env_file = ".env"
         case_sensitive = True
 
 # Global settings instance
