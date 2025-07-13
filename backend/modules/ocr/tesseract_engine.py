@@ -47,7 +47,9 @@ class TesseractEngine:
         Extract text from file using Tesseract
         Supports images and PDFs
         """
+        print("🔍 [DEBUG] Tesseract: Starting extraction for:", file_path)
         if not self.available:
+            print("❌ [DEBUG] Tesseract: Not available")
             return {
                 'success': False,
                 'error': 'Tesseract not available'

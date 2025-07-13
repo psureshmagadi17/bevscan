@@ -29,7 +29,7 @@ def test_upload_invoice():
     print("\n📤 Testing invoice upload...")
     
     # Path to sample invoice
-    invoice_path = "uploads/sample_beverage_invoice.pdf"
+    invoice_path = os.path.join(os.path.dirname(__file__), "uploads/sample_beverage_invoice.pdf")
     
     if not os.path.exists(invoice_path):
         print(f"   ❌ Sample invoice not found: {invoice_path}")

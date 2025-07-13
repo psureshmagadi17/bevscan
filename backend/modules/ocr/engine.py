@@ -39,6 +39,7 @@ class OCREngine:
         Extract text from file (image or PDF)
         Returns: Dict with text, confidence, and metadata
         """
+        print("🔍 [DEBUG] OCR Engine: Starting extraction for:", file_path)
         logger.info(f"Starting OCR extraction for {file_path}")
         
         try:
@@ -53,12 +54,16 @@ class OCREngine:
             processed_path = await self._preprocess_image(file_path)
             
             # Try primary OCR engine
+            print("🔍 [DEBUG] OCR Engine: Using primary engine:", self.primary_engine)
             result = await self._extract_with_engine(processed_path, self.primary_engine)
+            print("🔍 [DEBUG] OCR Engine: Primary result:", result)
             
             # If primary fails, try fallback
             if not result['success'] and self.primary_engine != "easyocr":
+                print("🔍 [DEBUG] OCR Engine: Primary failed, trying EasyOCR fallback")
                 logger.info("Primary OCR failed, trying EasyOCR fallback")
                 result = await self._extract_with_engine(processed_path, "easyocr")
+                print("🔍 [DEBUG] OCR Engine: Fallback result:", result)
             
             # Update statistics
             self._update_stats(result)

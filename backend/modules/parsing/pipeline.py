@@ -30,12 +30,16 @@ class InvoiceParsingPipeline:
         Parse invoice from file path
         Returns: Parsed invoice data with confidence scores
         """
+        print("🚀 [DEBUG] Starting invoice parsing for:", file_path)
         logger.info(f"Starting invoice parsing for {file_path}")
         
         try:
             # Step 1: OCR Processing
+            print("🔍 [DEBUG] Starting OCR extraction...")
             ocr_result = await self._extract_text(file_path)
+            print("🔍 [DEBUG] OCR result:", ocr_result)
             if not ocr_result['success']:
+                print("❌ [DEBUG] OCR failed:", ocr_result.get('error'))
                 return {
                     'success': False,
                     'error': 'OCR extraction failed',
@@ -44,11 +48,13 @@ class InvoiceParsingPipeline:
             
             raw_text = ocr_result['text']
             ocr_confidence = ocr_result['confidence']
+            print("🔍 [DEBUG] OCR extracted text:\n", raw_text[:1000])
             
             # Step 2: Text Preprocessing
             processed_text = self._preprocess_text(raw_text)
             
             # Step 3: LLM Extraction
+            print("🤖 [DEBUG] LLM prompt/input:\n", processed_text[:1000])
             llm_result = await self._extract_structured_data(processed_text)
             if not llm_result['success']:
                 return {
@@ -151,6 +157,7 @@ class InvoiceParsingPipeline:
             
             # Use LLM to extract structured data
             response = self.llm_client.generate_structured(prompt, schema)
+            print("🤖 [DEBUG] LLM output:\n", response)
             
             # Validate the response structure
             if self._validate_parsed_data(response):

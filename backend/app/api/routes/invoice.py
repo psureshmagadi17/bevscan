@@ -78,6 +78,8 @@ async def parse_invoice(invoice_id: int, db: Session = Depends(get_db)):
         
         db.commit()
         db.refresh(invoice)
+        print("💾 [DEBUG] Saved to DB - parsed_data:", invoice.parsed_data)
+        print("💾 [DEBUG] Saved to DB - raw_text:", str(invoice.raw_text)[:500])
         
         return {"message": "Invoice parsed successfully", "invoice_id": invoice_id}
         
