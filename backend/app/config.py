@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://user:pass@localhost/bevscan"
     
     # LLM Configuration
-    LLM_PROVIDER: str = "ollama"  # Options: ollama, gemini, openai, anthropic, huggingface
-    LLM_MODEL: str = "llama3.1:8b"  # Model name for the selected provider
+    LLM_PROVIDER: str = "gemini"  # Options: ollama, gemini, openai, anthropic, huggingface
+    LLM_MODEL: str = "gemini-1.5-flash"  # Model name for the selected provider
     
     # API Keys (only required for cloud providers)
     GEMINI_API_KEY: Optional[str] = None
@@ -60,8 +60,8 @@ LLM_CONFIGS = {
         "free": True,
         "setup_required": False,
         "api_key_required": True,
-        "models": ["gemini-pro", "gemini-pro-vision"],
-        "recommended_model": "gemini-pro"
+        "models": ["gemini-pro", "gemini-pro-vision", "gemini-1.5-flash", "gemini-1.5-pro"],
+        "recommended_model": "gemini-1.5-flash"
     },
     "openai": {
         "name": "OpenAI GPT",
