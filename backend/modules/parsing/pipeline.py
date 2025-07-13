@@ -20,9 +20,15 @@ logger = structlog.get_logger()
 class InvoiceParsingPipeline:
     """Main invoice parsing pipeline"""
     
-    def __init__(self):
+    def __init__(self, llm_provider: str = None, llm_model: str = None):
         self.ocr_engine = OCREngine()
-        self.llm_client = LLMFactory.create_client(settings.LLM_PROVIDER)
+        
+        # Use provided LLM provider/model or fall back to settings
+        if llm_provider:
+            self.llm_client = LLMFactory.create_client(llm_provider, llm_model)
+        else:
+            self.llm_client = LLMFactory.create_client(settings.LLM_PROVIDER, settings.LLM_MODEL)
+            
         self.price_validator = PriceValidator()
         self.duplicate_validator = DuplicateValidator()
         
@@ -66,6 +72,9 @@ class InvoiceParsingPipeline:
             
             parsed_data = llm_result['data']
             llm_confidence = llm_result['confidence']
+            
+            # Convert data types (strings to numbers)
+            parsed_data = self._convert_data_types(parsed_data)
             
             # Step 4: Data Validation
             validation_result = await self._validate_data(parsed_data)
@@ -128,33 +137,29 @@ class InvoiceParsingPipeline:
             # Define the expected JSON schema
             schema = {
                 "vendor_name": "string",
-                "invoice_number": "string",
+                "invoice_number": "string", 
                 "invoice_date": "YYYY-MM-DD",
                 "due_date": "YYYY-MM-DD or null",
                 "items": [
                     {
                         "description": "string",
-                        "quantity": "number",
-                        "unit_price": "number",
-                        "total": "number"
+                        "quantity": "number (not string)",
+                        "unit_price": "number (not string)",
+                        "total": "number (not string)"
                     }
                 ],
-                "subtotal": "number",
-                "tax": "number",
-                "total": "number"
+                "subtotal": "number (not string)",
+                "tax": "number (not string)",
+                "total": "number (not string)"
             }
             
-            # Create structured prompt
-            prompt = f"""
-            Extract the following information from this invoice text in valid JSON format:
-            
-            {json.dumps(schema, indent=2)}
-            
-            Invoice text:
-            {text}
-            
-            Important: Respond only with valid JSON. Do not include any explanations or additional text.
-            """
+            # Create optimized prompt
+            prompt = f"""Extract invoice data as JSON:
+
+{text}
+
+Return ONLY valid JSON matching this schema (no other text):
+{json.dumps(schema, indent=2)}"""
             
             # Use LLM to extract structured data
             response = self.llm_client.generate_structured(prompt, schema)
@@ -194,6 +199,38 @@ class InvoiceParsingPipeline:
                     return False
         
         return True
+    
+    def _convert_data_types(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert string values to appropriate data types"""
+        try:
+            # Convert numeric fields
+            if 'total' in data and data['total']:
+                data['total'] = float(str(data['total']).replace('$', '').replace(',', ''))
+            if 'subtotal' in data and data['subtotal']:
+                data['subtotal'] = float(str(data['subtotal']).replace('$', '').replace(',', ''))
+            if 'tax' in data and data['tax']:
+                data['tax'] = float(str(data['tax']).replace('$', '').replace(',', ''))
+            
+            # Convert item fields
+            if 'items' in data and isinstance(data['items'], list):
+                for item in data['items']:
+                    if 'quantity' in item and item['quantity']:
+                        # Handle non-numeric quantities like "I" (OCR artifact)
+                        try:
+                            item['quantity'] = float(item['quantity'])
+                        except (ValueError, TypeError):
+                            item['quantity'] = 1.0  # Default to 1 if can't parse
+                    
+                    if 'unit_price' in item and item['unit_price']:
+                        item['unit_price'] = float(str(item['unit_price']).replace('$', '').replace(',', ''))
+                    
+                    if 'total' in item and item['total']:
+                        item['total'] = float(str(item['total']).replace('$', '').replace(',', ''))
+            
+            return data
+        except Exception as e:
+            logger.error(f"Data type conversion failed: {e}")
+            return data  # Return original data if conversion fails
     
     async def _validate_data(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
         """Validate extracted data and generate alerts"""

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.core.models.invoice import Invoice, Vendor, InvoiceItem, Alert
@@ -19,8 +19,13 @@ UPLOAD_DIR = Path(settings.UPLOAD_DIR)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
-def upload_invoice(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Upload an invoice file (PDF/image) and create a DB record."""
+def upload_invoice(
+    file: UploadFile = File(...),
+    llm_provider: str = Form(None),
+    llm_model: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Upload an invoice file (PDF/image), create a DB record, and parse it automatically."""
     # Save file to uploads directory
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
@@ -40,10 +45,43 @@ def upload_invoice(file: UploadFile = File(...), db: Session = Depends(get_db)):
     db.add(invoice)
     db.commit()
     db.refresh(invoice)
-    return {"message": "File uploaded successfully", "invoice_id": invoice.id}
+
+    # --- Automatically trigger parsing ---
+    file_path = save_path
+    try:
+        # Pass provider/model to pipeline if given
+        pipeline = InvoiceParsingPipeline(llm_provider=llm_provider, llm_model=llm_model)
+        import asyncio
+        result = asyncio.run(pipeline.parse_invoice(str(file_path)))
+        invoice.raw_text = result.get("raw_text")
+        invoice.parsed_data = result.get("parsed_data")
+        invoice.confidence_score = result.get("confidence_score", 0.0)
+        invoice.status = "parsed"
+        if result.get("parsed_data"):
+            parsed = result["parsed_data"]
+            invoice.invoice_date = parsed.get("invoice_date")
+            invoice.total = parsed.get("total")
+            invoice.subtotal = parsed.get("subtotal")
+            invoice.tax = parsed.get("tax")
+        db.commit()
+        db.refresh(invoice)
+        print("💾 [DEBUG] Saved to DB - parsed_data:", invoice.parsed_data)
+        print("💾 [DEBUG] Saved to DB - raw_text:", str(invoice.raw_text)[:500])
+    except Exception as e:
+        logger.error(f"Error parsing invoice {invoice.id}: {e}")
+        invoice.status = "error"
+        db.commit()
+
+    # Return the invoice details (including parsed_data if successful)
+    return invoice
 
 @router.post("/{invoice_id}/parse", status_code=status.HTTP_200_OK)
-async def parse_invoice(invoice_id: int, db: Session = Depends(get_db)):
+async def parse_invoice(
+    invoice_id: int, 
+    llm_provider: str = Form(None),
+    llm_model: str = Form(None),
+    db: Session = Depends(get_db)
+):
     """Parse an uploaded invoice using OCR and LLM."""
     # Get invoice from database
     invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
@@ -56,8 +94,8 @@ async def parse_invoice(invoice_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Invoice file not found.")
     
     try:
-        # Initialize parsing pipeline
-        pipeline = InvoiceParsingPipeline()
+        # Initialize parsing pipeline with provider/model if provided
+        pipeline = InvoiceParsingPipeline(llm_provider=llm_provider, llm_model=llm_model)
         
         # Parse the invoice
         result = await pipeline.parse_invoice(str(file_path))

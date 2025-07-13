@@ -21,7 +21,7 @@ class OllamaClient(LLMClient):
                     "stream": False,
                     **kwargs
                 },
-                timeout=30
+                timeout=120  # Increased from 30 to 120 seconds
             )
             response.raise_for_status()
             return response.json()["response"]
@@ -49,11 +49,31 @@ Response:
             end_idx = response_text.rfind('}') + 1
             if start_idx != -1 and end_idx != 0:
                 json_str = response_text[start_idx:end_idx]
-                return json.loads(json_str)
+                # Try to parse the extracted JSON
+                parsed_json = json.loads(json_str)
+                print(f"🔍 [DEBUG] Extracted JSON: {json_str[:200]}...")
+                return parsed_json
             else:
                 raise ValueError("No JSON found in response")
         except json.JSONDecodeError as e:
-            raise Exception(f"Failed to parse JSON response: {e}")
+            # If JSON parsing fails, try to clean up the response
+            print(f"⚠️ [DEBUG] JSON parse error: {e}")
+            print(f"⚠️ [DEBUG] Raw response: {response_text[:500]}...")
+            
+            # Try to find and extract a valid JSON object
+            try:
+                # Look for JSON-like structure and try to fix common issues
+                cleaned_response = response_text.strip()
+                # Remove any text before the first {
+                if '{' in cleaned_response:
+                    cleaned_response = cleaned_response[cleaned_response.find('{'):]
+                # Remove any text after the last }
+                if '}' in cleaned_response:
+                    cleaned_response = cleaned_response[:cleaned_response.rfind('}')+1]
+                
+                return json.loads(cleaned_response)
+            except:
+                raise Exception(f"Failed to parse JSON response: {e}. Raw response: {response_text[:200]}...")
     
     def list_models(self) -> list:
         """List available models"""
