@@ -13,6 +13,7 @@ from modules.ocr.engine import OCREngine
 from modules.llm.client import LLMFactory
 from modules.parsing.validators.price_validator import PriceValidator
 from modules.parsing.validators.duplicate_validator import DuplicateValidator
+from app.config import settings
 
 logger = structlog.get_logger()
 
@@ -21,7 +22,7 @@ class InvoiceParsingPipeline:
     
     def __init__(self):
         self.ocr_engine = OCREngine()
-        self.llm_client = LLMFactory.create_client()
+        self.llm_client = LLMFactory.create_client(settings.LLM_PROVIDER)
         self.price_validator = PriceValidator()
         self.duplicate_validator = DuplicateValidator()
         
