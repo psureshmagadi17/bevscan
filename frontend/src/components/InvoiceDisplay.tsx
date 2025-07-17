@@ -118,15 +118,15 @@ export default function InvoiceDisplay({ invoice, onRefresh }: InvoiceDisplayPro
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">{formatCurrency(invoice.subtotal)}</span>
+              <span className="font-medium text-black">{formatCurrency(invoice.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Tax:</span>
-              <span className="font-medium">{formatCurrency(invoice.tax)}</span>
+              <span className="font-medium text-black">{formatCurrency(invoice.tax)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total:</span>
-              <span className="text-blue-600">{formatCurrency(invoice.total)}</span>
+              <span className="text-black">{formatCurrency(invoice.total)}</span>
             </div>
           </div>
         </div>
@@ -144,19 +144,19 @@ export default function InvoiceDisplay({ invoice, onRefresh }: InvoiceDisplayPro
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Vendor Name:</span>
-                    <span className="font-medium text-green-700">{invoice.parsed_data.vendor_name || 'N/A'}</span>
+                    <span className="font-medium text-black">{invoice.parsed_data.vendor_name || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Invoice Number:</span>
-                    <span className="font-medium">{invoice.parsed_data.invoice_number || 'N/A'}</span>
+                    <span className="font-medium text-black">{invoice.parsed_data.invoice_number || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Invoice Date:</span>
-                    <span className="font-medium">{formatDate(invoice.parsed_data.invoice_date)}</span>
+                    <span className="font-medium text-black">{formatDate(invoice.parsed_data.invoice_date)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Due Date:</span>
-                    <span className="font-medium">{formatDate(invoice.parsed_data.due_date)}</span>
+                    <span className="font-medium text-black">{formatDate(invoice.parsed_data.due_date)}</span>
                   </div>
                 </div>
               </div>
@@ -167,15 +167,15 @@ export default function InvoiceDisplay({ invoice, onRefresh }: InvoiceDisplayPro
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium text-blue-700">{formatCurrency(invoice.parsed_data.subtotal)}</span>
+                    <span className="font-medium text-black">{formatCurrency(invoice.parsed_data.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax:</span>
-                    <span className="font-medium">{formatCurrency(invoice.parsed_data.tax)}</span>
+                    <span className="font-medium text-black">{formatCurrency(invoice.parsed_data.tax)}</span>
                   </div>
                   <div className="flex justify-between font-bold border-t pt-2">
                     <span>Total:</span>
-                    <span className="text-blue-600">{formatCurrency(invoice.parsed_data.total)}</span>
+                    <span className="text-black">{formatCurrency(invoice.parsed_data.total)}</span>
                   </div>
                 </div>
               </div>
@@ -194,10 +194,10 @@ export default function InvoiceDisplay({ invoice, onRefresh }: InvoiceDisplayPro
                   </div>
                   {invoice.parsed_data.items.map((item: any, index: number) => (
                     <div key={index} className="grid grid-cols-4 gap-4 p-3 border-b last:border-b-0">
-                      <div className="text-sm">{item.description || 'N/A'}</div>
-                      <div className="text-sm">{item.quantity || 'N/A'}</div>
-                      <div className="text-sm">{formatCurrency(item.unit_price)}</div>
-                      <div className="text-sm font-medium">{formatCurrency(item.total)}</div>
+                      <div className="text-sm text-black">{item.description || 'N/A'}</div>
+                      <div className="text-sm text-black">{item.quantity || 'N/A'}</div>
+                      <div className="text-sm text-black">{formatCurrency(item.unit_price)}</div>
+                      <div className="text-sm font-medium text-black">{formatCurrency(item.total)}</div>
                     </div>
                   ))}
                 </div>
