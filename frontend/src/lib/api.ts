@@ -64,7 +64,7 @@ export interface Alert {
 // API functions
 export const invoiceApi = {
   // Upload invoice file
-  upload: async (file: File, llmProvider?: string, llmModel?: string): Promise<{ message: string; invoice_id: number }> => {
+  upload: async (file: File, llmProvider?: string, llmModel?: string): Promise<Invoice> => {
     const formData = new FormData();
     formData.append('file', file);
     if (llmProvider) formData.append('llm_provider', llmProvider);

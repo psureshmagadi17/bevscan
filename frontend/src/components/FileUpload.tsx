@@ -41,8 +41,11 @@ export default function FileUpload({ onUploadSuccess, onUploadError }: FileUploa
           onUploadError('Parsing failed.');
           return;
         }
+        // If still processing, continue polling
+        console.log(`Invoice ${invoiceId} status: ${invoice.status}`);
       } catch (e) {
-        // ignore
+        console.error('Error polling invoice:', e);
+        // Continue polling even if there's an error
       }
       await new Promise(res => setTimeout(res, POLL_INTERVAL));
     }
@@ -60,7 +63,8 @@ export default function FileUpload({ onUploadSuccess, onUploadError }: FileUploa
     try {
       const result = await invoiceApi.upload(file, llmOption.provider, llmOption.model);
       setUploadStatus('success');
-      pollForParsed(result.invoice_id);
+      // The backend returns the invoice object directly, so we use result.id
+      pollForParsed(result.id);
     } catch (error) {
       console.error('Upload error:', error);
       setUploadStatus('error');
